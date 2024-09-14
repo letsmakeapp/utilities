@@ -9,6 +9,14 @@ import (
 	"utilities/pkg/stack"
 )
 
+func IsDirectory(path string) (bool, error) {
+	f, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+	return f.IsDir(), nil
+}
+
 type StdLister struct{}
 
 var _ Lister = (*StdLister)(nil)
@@ -21,6 +29,15 @@ func (s *StdLister) ListFiles(
 	ctx context.Context,
 	path string,
 ) (iter.Seq[iterx.Failable[File]], error) {
+	yes, err := IsDirectory(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if !yes {
+		return nil, ErrPathIsNotDirectory
+	}
+
 	return func(yield func(iterx.Failable[File]) bool) {
 		st := stack.NewLinkedListStack[string]()
 		st.Push(path)
